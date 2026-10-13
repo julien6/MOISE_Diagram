@@ -1,0 +1,5 @@
+include README.md
+recursive-include examples *.moise
+recursive-include tests *.py
+include LICENSE
+include LANGUAGE.md

@@ -1,0 +1,27 @@
+@moise "Organisation du goûter"
+# Déclarations et références indépendantes de leur ordre.
+group gouter "Groupe goûter"
+role preparateur "Préparateur"
+role serveur "Serveur"
+contains gouter preparateur 1..1
+contains gouter serveur 1..2
+link com preparateur serveur intra
+
+goal pret "Goûter prêt"
+goal biscuits "Biscuits disposés"
+goal verres "Verres disposés"
+plan pret parallel biscuits verres
+mission m_biscuits "Mission biscuits"
+mission m_verres "Mission verres"
+goals m_biscuits biscuits
+goals m_verres verres
+per preparateur m_biscuits Any
+obl serveur m_verres Any
+
+agent lina "Lina"
+agent sami "Sami"
+plays lina serveur gouter
+plays sami preparateur gouter
+commits lina m_verres
+commits sami m_biscuits
+@end
