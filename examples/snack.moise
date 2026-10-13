@@ -1,0 +1,35 @@
+@moise "Afternoon snack organization"
+# A small organization covering the four views: SS, FS, DS and OE.
+
+# Structural specification
+role preparer "Preparer"
+role server "Server"
+group snack "Snack group"
+contains snack preparer 1..1
+contains snack server 1..2
+link snack preparer server com intra
+compat snack server preparer intra
+
+# Functional specification
+scheme serve ready "Serve the snack"
+goal ready "the snack is ready"
+goal biscuits "biscuits are laid out"
+goal glasses "glasses are laid out"
+plan ready =0.9 biscuits || glasses
+mission m_biscuits "lay out biscuits" 1..1
+mission m_glasses "lay out glasses"
+goals m_biscuits biscuits
+goals m_glasses glasses ready
+
+# Deontic specification
+per preparer m_biscuits Any
+obl server m_glasses Any
+
+# Organizational entity
+agent lina "Lina"
+agent sami "Sami"
+plays lina server snack
+plays sami preparer snack
+commits lina m_glasses
+commits sami m_biscuits
+@end

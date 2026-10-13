@@ -3,3 +3,4 @@ recursive-include examples *.moise
 recursive-include tests *.py
 include LICENSE
 include LANGUAGE.md
+recursive-include docs *.md *.svg

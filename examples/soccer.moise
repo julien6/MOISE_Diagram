@@ -1,0 +1,98 @@
+@moise "Soccer team"
+# The running example of Hübner, Sichman and Boissier (SBIA 2002).
+
+# --- Structural specification (Fig. 2) ---------------------------------------
+# soc is predefined: roles without an explicit parent specialize it.
+role player abstract
+role coach
+role back
+role goalkeeper
+role leader
+role middle
+role attacker
+inherits back player
+inherits leader player
+inherits middle player
+inherits attacker player
+inherits goalkeeper back           # back ⊏ goalkeeper
+
+group team
+group defense
+group attack
+
+contains team coach 1..2
+contains team leader 1..1 subgroups   # the leader is counted in team's sub-groups
+contains team defense 1..1
+contains team attack 1..1
+link team player player com inter
+link team leader player aut inter
+link team player coach acq inter
+link team coach player aut inter
+
+contains defense goalkeeper 1..1
+contains defense back 3..3
+contains defense leader 0..1
+link defense goalkeeper back aut intra
+compat defense leader back intra
+
+contains attack middle 4..4
+contains attack attacker 3..3
+contains attack leader 0..1
+compat attack leader middle intra
+
+# --- Functional specification (Fig. 3 and Table 1) ---------------------------
+scheme sg g0 "score a soccer-goal"
+goal g0  "score a soccer-goal"
+goal g2  "the ball is in the middle field"
+goal g3  "the ball is in the attack field"
+goal g4  "the ball was kicked to the opponent's goal"
+goal g6  "a teammate has the ball in the defense field"
+goal g7  "the ball was passed to a left middle"
+goal g8  "the ball was passed to a right middle"
+goal g9  "the ball was passed to a middle"
+goal g11 "a middle passed the ball to an attacker"
+goal g13 "a middle has the ball"
+goal g14 "the attacker is in good position"
+goal g16 "a left middle has the ball"
+goal g17 "a right middle has the ball"
+goal g18 "a left attacker is in a good position"
+goal g19 "a right attacker is in a good position"
+goal g21 "a left middle passed the ball to a left attacker"
+goal g22 "a right middle passed the ball to a right attacker"
+goal g24 "a left attacker kicked the ball to the opponent's goal"
+goal g25 "a right attacker kicked the ball to the opponent's goal"
+
+plan g0 =0.8 g2, g3, g4
+plan g2 =0.7 g6, g9
+plan g9 = g7 | g8
+plan g3 =0.9 (g13 || g14), g11      # the anonymous parallel goal is g10 in the text
+plan g13 = g16 | g17
+plan g14 = g18 || g19
+plan g11 = g21 | g22
+plan g4 =0.5 g24 | g25
+
+mission m1 1..4
+mission m2 1..1
+mission m3 1..1
+mission m4 1..1
+mission m5 1..1
+mission m6 1..1
+mission m7 1..1
+goals m1 g2 g6 g9 g7 g8 g13
+goals m2 g13 g11 g16 g21
+goals m3 g13 g11 g17 g22
+goals m4 g4 g14 g18 g24
+goals m5 g4 g14 g19 g25
+goals m6 g3
+goals m7 g0
+
+# --- Deontic specification ----------------------------------------------------
+per goalkeeper m7 Any
+obl goalkeeper m1 Any
+obl back m1 Any
+obl leader m6 Any
+obl middle m2 Any
+obl middle m3 Any
+obl attacker m4 Any
+obl attacker m5 Any
+@end
