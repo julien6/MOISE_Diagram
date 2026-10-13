@@ -36,6 +36,7 @@ Both diagrams are generated from [`examples/soccer.moise`](examples/soccer.moise
   - **Functional:** social schemes, goals, plans with sequence, choice and parallelism, success degrees and nested anonymous goals, missions with cardinalities, and mission preferences.
   - **Deontic:** permissions and obligations with time constraints.
 - **The paper's notation.** The structural view looks like Fig. 2, with rounded role boxes, folder-shaped groups, right-angled inheritance lines sharing one triangle per parent, diamonds, one arrowhead per link type, and wavy inter-group lines. Cardinalities are placed so that they never overlap. Social schemes look like Fig. 3: missions in superscript, success degrees in subscript, and bars for choice and parallelism. A goal table follows Table 1, and `--key` adds the legends of both figures.
+- **Several renderings of the deontic specification.** The paper gives no graphical notation for it, so the default is the paper's list of `per`/`obl` predicates. You can also draw it as a role → mission graph or a roles × missions matrix, with or without the norms that roles inherit (`--ds-inherited`). The `--ds-links` mode draws each norm as a curve from its role in the structural view to its mission in the functional view.
 - **Checked against the model.** The compiler rejects, with a line number:
   - malformed or dangling references;
   - abstract roles placed in groups;
@@ -62,10 +63,13 @@ To render images, install [Graphviz](https://graphviz.org/download/) and make su
 moise-diagram examples/soccer.moise -o soccer.svg                         # all specifications
 moise-diagram examples/soccer.moise -o structure.svg --view ss --key      # Fig. 2 with its key
 moise-diagram examples/soccer.moise -o scheme.pdf --view fs --key         # Fig. 3 with its key
+moise-diagram examples/soccer.moise -o norms.svg --view ds --ds-style graph   # deontic graph
+moise-diagram examples/deontic.moise -o norms.svg --view ds --ds-style matrix --ds-inherited
+moise-diagram examples/soccer.moise -o org.svg --view ss --view fs --ds-links  # norms linking SS and FS
 moise-diagram examples/snack.moise -o snack.dot                           # no Graphviz needed
 ```
 
-The output file's extension selects the format: `.svg`, `.png`, `.pdf` or `.dot`. `--view` takes `ss`, `fs`, `ds` or `oe` and can be repeated. If the source has an error, the command prints `SOURCE: line N: message` to stderr and exits with status 2. `python -m moise_diagram` is equivalent to `moise-diagram`.
+The output file's extension selects the format: `.svg`, `.png`, `.pdf` or `.dot`. `--view` takes `ss`, `fs`, `ds` or `oe` and can be repeated. `--ds-style list|graph|matrix`, `--ds-inherited` and `--ds-links` control the deontic rendering. If the source has an error, the command prints `SOURCE: line N: message` to stderr and exits with status 2. `python -m moise_diagram` is equivalent to `moise-diagram`.
 
 ### Python
 

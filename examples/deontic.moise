@@ -1,0 +1,33 @@
+@moise "Inherited norms"
+# A small organization whose norms are inherited through the role hierarchy (paper eqs. 7-9):
+# back and goalkeeper inherit obl(player, m_def); goalkeeper inherits per(back, m_keep).
+# Try: moise-diagram examples/deontic.moise -o ds.svg --view ds --ds-style matrix --ds-inherited
+
+role player abstract
+role back
+role goalkeeper
+role coach
+inherits back player
+inherits goalkeeper back
+group team
+contains team back 2..4
+contains team goalkeeper 1..1
+contains team coach 1..1
+
+scheme play g0 "play a match"
+goal g0
+goal g1
+goal g2
+plan g0 = g1, g2
+mission m_def "defend"
+mission m_keep "keep the goal" 1..1
+mission m_lead "lead" 1..1
+goals m_def g1
+goals m_keep g2
+goals m_lead g0
+
+obl player m_def
+per back m_keep "second half"
+obl goalkeeper m_keep
+obl coach m_lead
+@end

@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import shutil
 import pytest
 from moise_diagram import DiagramError, compile_file, parse, to_dot
@@ -299,3 +300,84 @@ class TestRouting:
         if 'mx_line_g11_g22' in statements:
             _, points = self.points(statements['mx_line_g11_g22'])
             assert len(points) == 4
+
+
+DEONTIC = (EXAMPLES / 'deontic.moise').read_text(encoding='utf-8')
+
+
+class TestDeontic:
+    """Renderings of the deontic specification: list, graph, matrix, inherited norms and integrated links."""
+
+    def test_norms_of_applies_inheritance(self):
+        model = parse(DEONTIC)
+        assert [(n.mission, inherited) for n, inherited in model.norms_of('goalkeeper')] == [
+            ('m_def', True), ('m_keep', True), ('m_keep', False)]
+        assert model.norms_of('coach')[0][1] is False
+
+    def test_list(self):
+        model = parse(DEONTIC)
+        plain = to_dot(model, ['ds'])
+        assert '<I>per</I>(back, ' in plain and 'inherited from' not in plain
+        inherited = to_dot(model, ['ds'], ds_inherited=True)
+        assert '<I>obl</I>(goalkeeper, <FONT FACE="Times" POINT-SIZE="12"><I>m_def</I></FONT>, Any)   <I>inherited from player' in inherited
+
+    def test_graph(self):
+        dot = to_dot(parse(DEONTIC), ['ds'], key=True, ds_style='graph', ds_inherited=True)
+        assert '"__ds_role_player" [shape=box, style="rounded,filled", label=<<B><I>player</I></B>>]' in dot
+        assert '"__ds_role_coach" -> "__ds_mission_m_lead" [style=solid, arrowhead=normal' in dot
+        assert '"__ds_role_back" -> "__ds_mission_m_keep" [style=dashed, arrowhead=onormal, arrowsize=1.2, label=<' in dot
+        assert '"__ds_role_goalkeeper" -> "__ds_mission_m_def" [style=solid, arrowhead=normal, arrowsize=1.2, color=gray55' in dot
+        assert 'cluster_key_ds' in dot and 'second half' in dot
+
+    def test_matrix(self):
+        dot = to_dot(parse(DEONTIC), ['ds'], ds_style='matrix', ds_inherited=True)
+        cells = re.findall(r'<TD>(.*?)</TD>', dot.split('"__ds_matrix"')[1])
+        assert '<FONT COLOR="gray55"><B>O</B></FONT>' in cells            # back: obl m_def inherited from player
+        assert any(c.startswith('<B>P</B><BR/>') and 'second half' in c for c in cells)
+        assert '<B>O</B>' in cells and 'inherited' in dot
+        assert 'gray55' not in to_dot(parse(DEONTIC), ['ds'], ds_style='matrix').split('"__ds_matrix"')[1].split('obligation')[0]
+
+    def test_links_are_deferred_and_need_both_views(self):
+        from moise_diagram.dot import DEFERRED
+        model = parse(DEONTIC)
+        dot = to_dot(model, ['ss', 'fs'], ds_links=True)
+        deferred = [line for line in dot.splitlines() if line.startswith(DEFERRED)]
+        assert len(deferred) == 4 and '"__ds_corridor"' in dot
+        assert '"coach" -> "__missions_play"' in deferred[-1] and 'mx_row=3, mx_rows=4' in deferred[-1]
+        assert 'PORT="m_m_lead"' in dot
+        assert DEFERRED not in to_dot(model, ['ss'], ds_links=True)
+
+    def test_unknown_style(self):
+        with pytest.raises(DiagramError, match='unknown deontic style'):
+            to_dot(parse(DEONTIC), ds_style='pie')
+
+    @pytest.mark.skipif(not shutil.which('dot'), reason='Graphviz is not installed')
+    def test_links_are_routed_to_their_rows(self):
+        import subprocess
+        from moise_diagram.dot import DEFERRED
+        from moise_diagram.route import _parse, _parse_pos, route
+        dot = to_dot(parse(DEONTIC), ['ss', 'fs'], ds_links=True, ds_inherited=True)
+        deferred = [line[len(DEFERRED):] for line in dot.splitlines() if line.startswith(DEFERRED)]
+        laid = subprocess.run(['dot', '-Tdot'], input=dot.encode(), capture_output=True, check=True).stdout.decode()
+        statements = [s for s in _parse(route(laid, deferred)) if (s.get('id') or '').startswith('mx_link_')]
+        assert len(statements) == len(deferred) == 7   # 4 declared + 3 inherited
+        tips = {}
+        for s in statements:
+            prefix, points = _parse_pos(s.get('pos'))
+            assert prefix[0].startswith('e,') and len(points) == 4 and s.get('mx_row') is None
+            tips.setdefault(s.head[2], set()).add(round(float(prefix[0].split(',')[2])))
+        rows = sorted(y for ys in tips.values() for y in ys)
+        assert len(set(rows)) == 3                                     # one height per mission row
+        assert all(s.get('lp') for s in statements if s.get('label'))  # time constraints follow the curve
+
+    @pytest.mark.skipif(not shutil.which('dot'), reason='Graphviz is not installed')
+    @pytest.mark.parametrize('options', [
+        ['--view', 'ds', '--ds-style', 'graph', '--ds-inherited', '--key'],
+        ['--view', 'ds', '--ds-style', 'matrix', '--ds-inherited'],
+        ['--view', 'ss', '--view', 'fs', '--ds-links', '--ds-inherited', '--key'],
+    ])
+    def test_cli_renders(self, tmp_path, options):
+        source = tmp_path / 'deontic.moise'
+        source.write_text(DEONTIC, encoding='utf-8')
+        main([str(source), '-o', str(tmp_path / 'out.svg'), *options])
+        assert (tmp_path / 'out.svg').read_bytes().startswith(b'<?xml')

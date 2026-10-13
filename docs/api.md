@@ -27,57 +27,60 @@ except DiagramError as error:
     print(f"Invalid organization: {error}")   # e.g. "line 12: x cannot commit to m1: none of its roles ..."
 ```
 
-### `to_dot(model, views=VIEWS, key=False) -> str`
+### `to_dot(model, views=VIEWS, key=False, ds_style="list", ds_inherited=False, ds_links=False) -> str`
 
 Converts a validated model into Graphviz DOT source, drawn with the paper's notation.
 
 - **views**: the specifications to draw, any of `"ss"` (structural), `"fs"` (functional), `"ds"` (deontic) and `"oe"` (organizational entity). A view with no content is skipped. An unknown view raises `DiagramError`.
-- **key**: add the legends of Fig. 2 (for `ss`) and Fig. 3 (for `fs`).
+- **key**: add the legends: those of Fig. 2 for `ss` and Fig. 3 for `fs`, plus one for the deontic edges when the DS is drawn as a graph or with `ds_links`.
+- **ds_style**: draw the DS as a predicate `"list"` (as in the paper), a role → mission `"graph"`, or a roles × missions `"matrix"`. The accepted values are in `moise_diagram.DS_STYLES`; any other value raises `DiagramError`.
+- **ds_inherited**: also show the norms that roles inherit from the roles they specialize (paper eqs. 8–9), in grey.
+- **ds_links**: draw each norm as an edge from its role in the structural view to its mission in the functional view. This only takes effect when both `ss` and `fs` are drawn.
+
+See [LANGUAGE.md](../LANGUAGE.md#deontic-specification) for pictures of each rendering.
 
 ```python
 import subprocess
 from moise_diagram import parse, to_dot
 
-dot = to_dot(parse(source), views=["fs"], key=True)
+dot = to_dot(parse(source), views=["ds"], ds_style="matrix", ds_inherited=True)
 png = subprocess.run(["dot", "-Tpng", "-Gdpi=200"], input=dot.encode(), capture_output=True, check=True).stdout
 ```
 
-Pass only models returned by `parse`: `to_dot` does not validate its input.
+Plain `dot`, as above, renders everything except what the routing step adds: bus lines, wavy lines, placed cardinalities and the `ds_links` curves. In particular, the `ds_links` edges are emitted as `// mx_deferred` comments that only [`render`](#renderdot-format---bytes) draws. Pass only models returned by `parse`: `to_dot` does not validate its input.
 
-### `compile_file(source, output, views=VIEWS, key=False) -> None`
+### `compile_file(source, output, views=VIEWS, key=False, *, ds_style="list", ds_inherited=False, ds_links=False) -> None`
 
-Reads a UTF-8 `.moise` file, validates it, and writes the result to `output`. Both paths may be strings or `os.PathLike` objects. `views` and `key` are passed to `to_dot`. The format is chosen from the output suffix (case-insensitive):
+Reads a UTF-8 `.moise` file, validates it, and writes the result to `output`. Both paths may be strings or `os.PathLike` objects. The other arguments are passed to `to_dot`. The format is chosen from the output suffix (case-insensitive):
 
 | Suffix | Output | Requires Graphviz |
 | --- | --- | --- |
-| `.dot` | DOT source text (UTF-8) | No |
+| `.dot` | DOT source text produced by `to_dot` (UTF-8) | No |
 | `.svg` | SVG image | Yes |
 | `.png` | PNG image | Yes |
 | `.pdf` | PDF document | Yes |
 
-Missing parent directories are created.
+The image formats go through [`render`](#renderdot-format---bytes). Missing parent directories are created.
 
-The `.dot` file is the source produced by `to_dot`. The image formats go through [`render`](#renderdot-format---bytes), which adds the paper's line styles that Graphviz cannot draw on its own.
+**Raises**:
+
+- `DiagramError` if the source is invalid, an option is invalid, the suffix is not supported, the `dot` or `neato` executable is not on `PATH`, or Graphviz fails (the message is then Graphviz's stderr).
+- `OSError` if the source cannot be read or the output cannot be written.
 
 ### `render(dot, format) -> bytes`
 
 Defined in `moise_diagram.compiler`. It draws DOT source produced by `to_dot` in any Graphviz output format (`"svg"`, `"png"`, `"pdf"`, …):
 
-1. `dot -Tdot` computes the layout.
-2. `moise_diagram.route.route` redraws the inheritance bus lines, the wavy inter-group lines, the straight plan lines and the cardinality positions.
+1. `dot -Tdot` computes the layout. The `// mx_deferred` edges (from `ds_links`) are left out, so they take up no space in it.
+2. `moise_diagram.route.route` redraws the inheritance bus lines, the wavy inter-group lines, the straight plan lines and the cardinality positions. It also adds the deferred edges as S-curves.
 3. `neato -n2` renders the positioned graph.
 
 ```python
 from moise_diagram import parse, to_dot
 from moise_diagram.compiler import render
 
-svg = render(to_dot(parse(source), views=["ss"], key=True), "svg")
+svg = render(to_dot(parse(source), views=["ss", "fs"], ds_links=True), "svg")
 ```
-
-**Raises**:
-
-- `DiagramError` if the source is invalid, the suffix is not supported, the `dot` or `neato` executable is not on `PATH`, or Graphviz fails (the message is then Graphviz's stderr).
-- `OSError` if the source cannot be read or the output cannot be written.
 
 ## The model
 
@@ -111,6 +114,7 @@ The model also has methods that apply the paper's rules:
 | `ancestors(role)` | The role and every role it specializes, transitively |
 | `subgroups(group)` | The group and all its sub-groups, transitively |
 | `missions_of_goal(goal)` | Identifiers of the missions that contain the goal |
+| `norms_of(role)` | The norms that apply to the role, as `(Norm, inherited)` pairs: its own norms, and those of the roles it specializes (eqs. 8–9) with `inherited=True` |
 
 ### Element classes
 
@@ -140,7 +144,7 @@ Example: list the missions each role may take, including inherited norms.
 ```python
 model = parse(source)
 for role in model.roles.values():
-    allowed = {n.mission for n in model.norms if n.role in model.ancestors(role.id)}
+    allowed = {norm.mission for norm, inherited in model.norms_of(role.id)}
     print(role.text, sorted(allowed))
 ```
 
@@ -155,7 +159,9 @@ A subclass of `ValueError`, raised for every problem with the input. Messages st
 The package installs a `moise-diagram` console script. `python -m moise_diagram` is equivalent.
 
 ```text
-usage: moise-diagram [-h] -o OUTPUT [--view {ss,fs,ds,oe}] [--key] source
+usage: moise-diagram [-h] -o OUTPUT [--view {ss,fs,ds,oe}] [--key]
+                     [--ds-style {list,graph,matrix}] [--ds-inherited] [--ds-links]
+                     source
 
 positional arguments:
   source                input .moise file (UTF-8)
@@ -165,7 +171,13 @@ options:
                         output file; its suffix (.dot, .svg, .png or .pdf) selects the format
   --view {ss,fs,ds,oe}  specification to draw: ss (structural), fs (functional), ds (deontic) or
                         oe (organizational entity); repeat to draw several (default: all)
-  --key                 add the legend of the paper's figures
+  --key                 add the legends of the drawn views
+  --ds-style {list,graph,matrix}
+                        deontic view: list of per/obl predicates as in the paper (default),
+                        role-mission graph, or roles x missions matrix
+  --ds-inherited        also show the norms that roles inherit from the roles they specialize
+  --ds-links            draw the norms as edges from the roles of the structural view to the
+                        missions of the functional view (requires both views)
 ```
 
 | Exit status | Meaning |

@@ -35,29 +35,11 @@
 <polygon fill="none" stroke="#999999" stroke-dasharray="5,2" points="854,-204 854,-309 1130,-309 1130,-204 854,-204"/>
 <text text-anchor="middle" x="992" y="-292.2" font-family="Helvetica,sans-Serif" font-size="16.00">OE: organizational entity</text>
 </g>
-<!-- soc -->
-<g id="node1" class="node">
-<title>soc</title>
-<path fill="white" stroke="black" d="M106,-261.5C106,-261.5 76,-261.5 76,-261.5 70,-261.5 64,-255.5 64,-249.5 64,-249.5 64,-237.5 64,-237.5 64,-231.5 70,-225.5 76,-225.5 76,-225.5 106,-225.5 106,-225.5 112,-225.5 118,-231.5 118,-237.5 118,-237.5 118,-249.5 118,-249.5 118,-255.5 112,-261.5 106,-261.5"/>
-<text text-anchor="start" x="80" y="-241.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="12.00">soc</text>
-</g>
-<!-- preparer -->
-<g id="node2" class="node">
-<title>preparer</title>
-<path fill="white" stroke="black" d="M70,-172C70,-172 28,-172 28,-172 22,-172 16,-166 16,-160 16,-160 16,-148 16,-148 16,-142 22,-136 28,-136 28,-136 70,-136 70,-136 76,-136 82,-142 82,-148 82,-148 82,-160 82,-160 82,-166 76,-172 70,-172"/>
-<text text-anchor="start" x="24" y="-151.9" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00">Preparer</text>
-</g>
 <!-- soc&#45;&gt;preparer -->
 <g id="mx_bus_soc_preparer" class="edge">
 <title>soc&#45;&gt;preparer</title>
 <path fill="none" stroke="black" d="M91,-211.5C91,-207.25 91,-203 91,-198.75 77,-198.75 63,-198.75 49,-198.75 49,-189.83 49,-180.92 49,-172"/>
 <polygon fill="none" stroke="black" points="86.1,-211.5 91,-225.5 95.9,-211.5 86.1,-211.5"/>
-</g>
-<!-- server -->
-<g id="node3" class="node">
-<title>server</title>
-<path fill="white" stroke="black" d="M149,-172C149,-172 119,-172 119,-172 113,-172 107,-166 107,-160 107,-160 107,-148 107,-148 107,-142 113,-136 119,-136 119,-136 149,-136 149,-136 155,-136 161,-142 161,-148 161,-148 161,-160 161,-160 161,-166 155,-172 149,-172"/>
-<text text-anchor="start" x="115" y="-151.9" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00">Server</text>
 </g>
 <!-- soc&#45;&gt;server -->
 <g id="mx_bus_soc_server" class="edge">
@@ -70,13 +52,6 @@
 <title>preparer&#45;&gt;server</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M82.01,-136C86.54,-136 93.46,-136 98.86,-136.14"/>
 <ellipse fill="black" stroke="black" cx="102.89" cy="-136.46" rx="4" ry="4"/>
-</g>
-<!-- snack -->
-<g id="node4" class="node">
-<title>snack</title>
-<polygon fill="white" stroke="black" points="145.5,-74 58.5,-74 58.5,-78 46.5,-78 46.5,-38 145.5,-38 145.5,-74"/>
-<polyline fill="none" stroke="black" points="46.5,-74 58.5,-74 "/>
-<text text-anchor="middle" x="96" y="-52.6" font-family="Courier,monospace" font-size="13.00">Snack group</text>
 </g>
 <!-- preparer&#45;&gt;snack -->
 <g id="mx_card_0" class="edge">
@@ -98,6 +73,43 @@
 <polygon fill="none" stroke="black" points="108.92,-89.63 100.62,-83.89 102.73,-74.01 111.03,-79.76 108.92,-89.63"/>
 <text text-anchor="start" x="133.88" y="-122.08" font-family="Times" font-style="italic" font-size="10.00">1..2</text>
 </g>
+<!-- ready&#45;&gt;biscuits -->
+<g id="mx_line_ready_biscuits" class="edge">
+<title>ready:op&#45;&gt;biscuits</title>
+<path fill="none" stroke="black" d="M446,-230.5C424,-211.04 402,-191.59 380,-172.13"/>
+</g>
+<!-- ready&#45;&gt;glasses -->
+<g id="mx_line_ready_glasses" class="edge">
+<title>ready:op&#45;&gt;glasses</title>
+<path fill="none" stroke="black" d="M446,-230.5C468.67,-211.04 491.33,-191.59 514,-172.13"/>
+</g>
+<!-- biscuits&#45;&gt;__goals_serve -->
+<!-- biscuits&#45;&gt;__missions_serve -->
+<!-- soc -->
+<g id="node1" class="node">
+<title>soc</title>
+<path fill="white" stroke="black" d="M106,-261.5C106,-261.5 76,-261.5 76,-261.5 70,-261.5 64,-255.5 64,-249.5 64,-249.5 64,-237.5 64,-237.5 64,-231.5 70,-225.5 76,-225.5 76,-225.5 106,-225.5 106,-225.5 112,-225.5 118,-231.5 118,-237.5 118,-237.5 118,-249.5 118,-249.5 118,-255.5 112,-261.5 106,-261.5"/>
+<text text-anchor="start" x="80" y="-241.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="12.00">soc</text>
+</g>
+<!-- preparer -->
+<g id="node2" class="node">
+<title>preparer</title>
+<path fill="white" stroke="black" d="M70,-172C70,-172 28,-172 28,-172 22,-172 16,-166 16,-160 16,-160 16,-148 16,-148 16,-142 22,-136 28,-136 28,-136 70,-136 70,-136 76,-136 82,-142 82,-148 82,-148 82,-160 82,-160 82,-166 76,-172 70,-172"/>
+<text text-anchor="start" x="24" y="-151.9" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00">Preparer</text>
+</g>
+<!-- server -->
+<g id="node3" class="node">
+<title>server</title>
+<path fill="white" stroke="black" d="M149,-172C149,-172 119,-172 119,-172 113,-172 107,-166 107,-160 107,-160 107,-148 107,-148 107,-142 113,-136 119,-136 119,-136 149,-136 149,-136 155,-136 161,-142 161,-148 161,-148 161,-160 161,-160 161,-166 155,-172 149,-172"/>
+<text text-anchor="start" x="115" y="-151.9" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00">Server</text>
+</g>
+<!-- snack -->
+<g id="node4" class="node">
+<title>snack</title>
+<polygon fill="white" stroke="black" points="145.5,-74 58.5,-74 58.5,-78 46.5,-78 46.5,-38 145.5,-38 145.5,-74"/>
+<polyline fill="none" stroke="black" points="46.5,-74 58.5,-74 "/>
+<text text-anchor="middle" x="96" y="-52.6" font-family="Courier,monospace" font-size="13.00">Snack group</text>
+</g>
 <!-- ready -->
 <g id="node5" class="node">
 <title>ready</title>
@@ -115,22 +127,12 @@
 <text text-anchor="start" x="334" y="-151.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00">biscuits</text>
 <text text-anchor="start" x="382" y="-153" font-family="Times" font-style="italic" font-size="10.00">m_biscuits</text>
 </g>
-<!-- ready&#45;&gt;biscuits -->
-<g id="mx_line_ready_biscuits" class="edge">
-<title>ready:op&#45;&gt;biscuits</title>
-<path fill="none" stroke="black" d="M446,-230.5C424,-211.04 402,-191.59 380,-172.13"/>
-</g>
 <!-- glasses -->
 <g id="node7" class="node">
 <title>glasses</title>
 <polygon fill="white" stroke="transparent" points="567.5,-172 460.5,-172 460.5,-136 567.5,-136 567.5,-172"/>
 <text text-anchor="start" x="470" y="-151.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00">glasses</text>
 <text text-anchor="start" x="517" y="-153" font-family="Times" font-style="italic" font-size="10.00">m_glasses</text>
-</g>
-<!-- ready&#45;&gt;glasses -->
-<g id="mx_line_ready_glasses" class="edge">
-<title>ready:op&#45;&gt;glasses</title>
-<path fill="none" stroke="black" d="M446,-230.5C468.67,-211.04 491.33,-191.59 514,-172.13"/>
 </g>
 <!-- __goals_serve -->
 <g id="node8" class="node">
@@ -151,7 +153,6 @@
 <polyline fill="none" stroke="black" points="291,-20 401,-20 "/>
 <text text-anchor="start" x="294" y="-26.4" font-family="Helvetica,sans-Serif" font-size="12.00">glasses are laid out</text>
 </g>
-<!-- biscuits&#45;&gt;__goals_serve -->
 <!-- __missions_serve -->
 <g id="node9" class="node">
 <title>__missions_serve</title>
@@ -175,7 +176,6 @@
 <polyline fill="none" stroke="black" points="582,-28 619,-28 "/>
 <text text-anchor="start" x="585" y="-34.4" font-family="Helvetica,sans-Serif" font-size="12.00">1..*</text>
 </g>
-<!-- biscuits&#45;&gt;__missions_serve -->
 <!-- __norms -->
 <g id="node10" class="node">
 <title>__norms</title>

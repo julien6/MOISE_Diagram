@@ -222,5 +222,13 @@ class OrganizationDiagram:
                 todo.extend(c.member for c in self.compositions if c.group == current and c.member in self.groups)
         return seen
 
+    def norms_of(self, role: str) -> list[tuple[Norm, bool]]:
+        """Norms that apply to ``role``, each with ``True`` when it is inherited (paper eqs. 8-9).
+
+        A role receives the permissions and obligations of every role it specializes.
+        """
+        ancestors = self.ancestors(role)
+        return [(n, n.role != role) for n in self.norms if n.role in ancestors]
+
     def missions_of_goal(self, goal: str) -> list[str]:
         return [m.id for m in self.missions.values() if goal in m.goals]

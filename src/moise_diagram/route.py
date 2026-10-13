@@ -13,7 +13,11 @@ marked edges, and ``neato -n2`` draws the result exactly as positioned. Edges ar
     compositions, whose cardinality label is placed away from nodes, edges and other labels;
 ``mx_line_*``
     goal decompositions (Fig. 3), redrawn as straight lines from the centre of the parent's bars
-    (or bottom) to the top of the subgoal.
+    (or bottom) to the top of the subgoal;
+
+Edges passed as ``deferred`` statements are not laid out by Graphviz at all: they are the norms of the
+integrated deontic mode (``mx_row``/``mx_rows`` locate the target row of a missions table), drawn here as
+S-curves with horizontal ends and labelled at their middle.
 """
 from __future__ import annotations
 import math
@@ -74,8 +78,11 @@ class _Edge:
     points: list[Point] = field(default_factory=list)
 
 
-def route(laid_out: str) -> str:
-    """Rewrite the output of ``dot -Tdot`` so that ``neato -n2`` draws bus, wavy and placed labels."""
+def route(laid_out: str, deferred: list[str] = ()) -> str:
+    """Rewrite the output of ``dot -Tdot`` so that ``neato -n2`` draws bus, wavy and placed labels.
+
+    ``deferred`` edge statements, kept out of the layout, are positioned and appended to the graph.
+    """
     statements = _parse(laid_out)
     nodes = {}
     edges = []
@@ -97,9 +104,14 @@ def route(laid_out: str) -> str:
     _place_cardinalities(marked('card'), edges, nodes)
     output = laid_out
     for s in sorted((s for s in statements if s.changed), key=lambda s: s.start, reverse=True):
-        attrs = ',\n\t\t'.join(f'{k}={v}' for k, v in s.attrs)
-        output = output[:s.start] + f'[{attrs}]' + output[s.end:]
-    return output
+        output = output[:s.start] + _attributes(s) + output[s.end:]
+    extra = [_curve(statement, nodes) for statement in deferred]
+    end = output.rstrip().rindex('}')
+    return output[:end] + ''.join(f'\t{e}\n' for e in extra if e) + output[end:]
+
+
+def _attributes(statement: _Statement) -> str:
+    return '[' + ',\n\t\t'.join(f'{k}={v}' for k, v in statement.attrs) + ']'
 
 
 # -- inheritance as bus lines -------------------------------------------------------------------
@@ -142,6 +154,39 @@ def _route_lines(edges: list[_Edge], nodes: dict[str, _Box]) -> None:
             end = ((head.x0 + head.x1) / 2, edge.points[-1][1])
             edge.prefix, edge.points = [], _polyline([start, end])
             _store(edge)
+
+
+def _curve(text: str, nodes: dict[str, _Box]) -> str | None:
+    """Position a deferred edge as an S-curve from the right of its tail to a row on the left of its head table."""
+    statement = _parse(text)[0]
+    tail, head = _unquote(statement.head[0]), _unquote(statement.head[statement.head.index('->') + 1])
+    if tail not in nodes or head not in nodes:
+        return None
+    source, table = nodes[tail], nodes[head]
+    row, rows = int(statement.get('mx_row')), int(statement.get('mx_rows'))
+    # Plaintext nodes have a 4 pt vertical and 8 pt horizontal margin around their table.
+    height = (table.y1 - table.y0 - 8) / rows
+    tip = (table.x0 + 1, table.y1 - 4 - (row + 0.5) * height)
+    end = (tip[0] - 12, tip[1])
+    middle = (source.y0 + source.y1) / 2
+    # Leave from the right side, or from the bottom when another node sits to the right on the same row
+    # (the curve would otherwise seem to start from that node).
+    blocked = any(box is not source and box.y0 <= middle <= box.y1 and source.x1 <= box.x0 < end[0] - 5
+                  for box in nodes.values())
+    if blocked:
+        start = ((source.x0 + source.x1) / 2, source.y0)
+        dx = max(30.0, abs(end[0] - start[0]) / 2)
+        points = [start, (start[0], start[1] - 40), (end[0] - dx, end[1]), end]
+    else:
+        start = (source.x1, middle)
+        dx = max(30.0, abs(end[0] - start[0]) / 2)
+        points = [start, (start[0] + dx, start[1]), (end[0] - dx, end[1]), end]
+    statement.attrs = [a for a in statement.attrs if a[0] not in ('mx_row', 'mx_rows')]
+    statement.set('pos', f'e,{_fmt(tip[0])},{_fmt(tip[1])} ' + ' '.join(f'{_fmt(x)},{_fmt(y)}' for x, y in points))
+    if statement.get('label'):
+        x, y = _bezier(points, 0.5)
+        statement.set('lp', f'{_fmt(x)},{_fmt(y + 7)}')
+    return f'{statement.head[0]} -> {statement.head[statement.head.index("->") + 1]} {_attributes(statement)};'
 
 
 def _polyline(corners: list[Point]) -> list[Point]:

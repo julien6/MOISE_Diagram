@@ -349,7 +349,7 @@ class _Parser:
                                                f'{second.role} in {second.group}: roles are not compatible')
         for c in m.commits:
             roles = {p.role for p in m.plays if p.agent == c.agent}
-            if not any(n.mission == c.mission and n.role in m.ancestors(r) for r in roles for n in m.norms):
+            if not any(n.mission == c.mission for r in roles for n, _ in m.norms_of(r)):
                 self.fail(c.line, f'{c.agent} cannot commit to {c.mission}: none of its roles has a permission or obligation for it')
 
 

@@ -286,7 +286,7 @@ Group and scheme **well-formedness** (cardinalities np, ng and nm) is *not* chec
 
 ## Graphical notation
 
-By default, all four specifications are drawn in one diagram, each in its own panel. Select some of them with `--view ss|fs|ds|oe` (repeatable) or `to_dot(model, views=[...])`. Add the paper's legends with `--key`.
+By default, all four specifications are drawn in one diagram, each in its own panel. Select some of them with `--view ss|fs|ds|oe` (repeatable) or `to_dot(model, views=[...])`. Add the legends with `--key`. The deontic specification has three styles and an integrated mode, described [below](#deontic-specification).
 
 ### Structural specification (Fig. 2)
 
@@ -319,9 +319,46 @@ Each social scheme is drawn in its own rounded panel.
 | Mission table | Identifier, description (when any mission has one) and agent cardinality nm |
 | Preferences | `m1 ≺ m2` list in the FS panel |
 
-### Deontic specification and organizational entity
+### Deontic specification
 
-The paper gives the DS as sets of predicates, and the diagram does the same: one `per(role, mission, tc)` or `obl(role, mission, tc)` line per norm, permissions first. The OE panel is a table listing, for each agent, the roles it plays in each group and the missions it is committed to.
+The paper writes the DS only as sets of predicates and gives it no graphical notation. The default `list` style follows the paper. The other renderings are conventions of this tool; they reuse the paper's symbols for roles (Fig. 2) and missions (Fig. 3).
+
+| Option | Rendering |
+| --- | --- |
+| `--ds-style list` (default) | One `per(role, mission, tc)` or `obl(role, mission, tc)` line per norm, permissions first, as in Section 4 of the paper |
+| `--ds-style graph` | Roles in a row above the missions, which are grouped by social scheme and annotated with their cardinality nm. Each norm is an edge from a role to a mission |
+| `--ds-style matrix` | A table with one row per role and one column per mission (grouped by scheme). Each cell holds the strongest norm, `O` (obligation) or `P` (permission), and any time constraint other than `Any` |
+| `--ds-inherited` | Adds the norms that roles inherit from the roles they specialize (equations 8–9), drawn in grey. In the list, each one says which role it comes from. In the matrix, a cell is grey when its norm is only inherited |
+| `--ds-links` | Integrated mode, which requires both the `ss` and `fs` views. Each norm is drawn as a curve from the role in the structural view to its mission's row in the missions table of the functional view. This shows how the DS connects the two specifications (Fig. 1 of the paper). It works with any `--ds-style` and with `--ds-inherited` |
+
+In the graph and the integrated mode, edges follow these conventions:
+
+| Norm | Edge |
+| --- | --- |
+| Obligation | Solid line, filled arrowhead |
+| Permission | Dashed line, open arrowhead (the weaker norm gets the lighter line) |
+| Inherited norm | The same line, in grey |
+| Time constraint other than `Any` | Italic label on the edge |
+
+`--key` adds a legend for these edges.
+
+Graph of the soccer team's DS (`--view ds --ds-style graph --key`):
+
+![Deontic graph of the soccer team](docs/images/soccer-ds-graph.svg)
+
+Matrix with inherited norms for [`examples/deontic.moise`](examples/deontic.moise) (`--view ds --ds-style matrix --ds-inherited`). `back` and `goalkeeper` inherit the obligation on `m_def` from `player`:
+
+![Deontic matrix with inherited norms](docs/images/deontic-matrix.svg)
+
+Integrated mode for the soccer team (`--view ss --view fs --ds-links`):
+
+![Norms linking the structure to the missions](docs/images/soccer-ds-links.svg)
+
+The integrated mode reads best on small and medium organizations. With many norms, the graph or the matrix is clearer.
+
+### Organizational entity
+
+The OE panel is a table listing, for each agent, the roles it plays in each group and the missions it is committed to.
 
 ## Validation rules and error messages
 
@@ -383,7 +420,7 @@ The paper gives the DS as sets of predicates, and the diagram does the same: one
 
 - **Rendering pipeline.** Graphviz has no wavy lines, shared bus lines or collision-free edge labels, so the compiler lays out the diagram with `dot`, redraws those elements itself, and renders the result with `neato -n2` (see [docs/internals.md](docs/internals.md#rendering-pipeline)). The `.dot` output is the source before this step: rendering it directly with `dot` gives plain solid lines and Graphviz's own label placement.
 - **Layout.** Element positions are computed by Graphviz, so they differ from the hand-drawn figures.
-- **Panels and the OE.** The dimension panels and the OE table are conventions of this tool. The paper defines the OE but gives no graphical notation for it.
+- **Panels, DS and OE.** The dimension panels, the `graph` and `matrix` styles of the DS, the integrated `--ds-links` mode and the OE table are conventions of this tool. The paper gives the DS only as predicate lists (the default `list` style), and it defines the OE without giving it a graphical notation.
 - **Group instances.** The OE treats each group specification as a single group instance, and each scheme as a single scheme instance.
 - **Not checked:**
   - well-formedness of groups and schemes (np, ng, nm);

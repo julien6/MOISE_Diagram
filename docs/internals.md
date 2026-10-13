@@ -12,12 +12,13 @@ This guide is for contributors who want to understand or extend the compiler.
 │   ├── model.py           # dataclasses mirroring the MOISE+ tuples, DiagramError
 │   ├── parser.py          # tokenizer, parser and every semantic check
 │   ├── dot.py             # Graphviz rendering in the paper's notation, keys
-│   ├── route.py           # post-layout geometry: bus lines, wavy lines, straight plans, labels
+│   ├── route.py           # post-layout geometry: bus lines, wavy lines, straight plans, labels, norm curves
 │   └── compiler.py        # compile_file(), render() and the command line
 ├── tests/test_compiler.py # pytest suite
 ├── examples/
 │   ├── soccer.moise       # transcription of the paper's soccer team
-│   └── snack.moise        # small example using all four views
+│   ├── snack.moise        # small example using all four views
+│   └── deontic.moise      # norms inherited through the role hierarchy
 ├── docs/                  # API reference, this guide, rendered images
 ├── LANGUAGE.md            # language reference
 └── pyproject.toml         # packaging (setuptools), console script, pytest config
@@ -91,6 +92,24 @@ The rules taken from the paper are implemented in two places:
 
 The global graph uses `splines=polyline`, so the edges that are not redrawn afterwards keep a straight-segment look while still avoiding nodes.
 
+### Deontic renderings
+
+`_applied(model, inherited)` lists the norms as they apply to roles:
+- the declared norms first, permissions before obligations as in the paper;
+- then, when `inherited` is set, the norms that `model.norms_of(role)` reports as inherited. Duplicates are removed: one entry per kind, role, mission and time constraint.
+
+All three styles and the integrated mode draw from this list:
+
+- **`list`** is an HTML table of predicates. Inherited ones are grey and name their source role.
+- **`graph`** draws its own role nodes (`__ds_role_*`, so they do not clash with the SS nodes) and one mission node per mission (`__ds_mission_*`), grouped in one cluster per scheme. Invisible edges keep roles above missions; the visible norm edges use `constraint=false`. `_norm_edge` holds the line conventions: solid/filled for `obl`, dashed/open for `per`, grey when inherited, and the time constraint as a label.
+- **`matrix`** is a single HTML table node. For each role and mission it keeps the strongest norm (`O` before `P`), and greys it when every entry of that strength is inherited.
+- **`ds_links`** works in three steps:
+  1. The missions table of each scheme gets one port per row (`PORT="m_<mission>"`), and it is placed to the left of the goal table.
+  2. Each norm becomes a statement prefixed with `// mx_deferred `, carrying `mx_row` and `mx_rows`. These are DOT comments: if Graphviz laid out these long edges, it would reserve a column for each one, and the gap between the views would grow with the number of norms. Instead, an invisible spacer node (`__ds_corridor`) leaves a gap whose width is proportional to the number of norms.
+  3. `render` collects the deferred statements and passes them to `route`, which draws each one as an S-curve. The curve starts at the right side of the role, or at its bottom when another node sits to its right on the same row. It ends at the left edge of the table, at the height of row `mx_row` of `mx_rows`, computed from the table's height (plaintext nodes add a 4 pt vertical margin). The label goes at the middle of the curve.
+
+The graph uses `outputorder=edgesfirst`, so nodes, which are filled white, are drawn over the lines that pass behind them.
+
 ### Rendering pipeline
 
 Graphviz cannot draw three features of Fig. 2 and Fig. 3: wavy lines, inheritance lines that share a bus, and plan lines that meet at the center of the operator bars. Its `taillabel` placement also lets cardinalities overlap. `compiler.render` therefore runs three steps:
@@ -130,6 +149,7 @@ The suite checks:
 - every syntax error, every inconsistency (cycles, scheme membership, missions), and every check on the organizational entity, both accepting and rejecting cases;
 - quoting of DOT keywords, view selection and keys;
 - the routing, on two different layouts of the soccer example (all views, and the structure alone): inheritance lines are orthogonal and share one bar, inter-group lines are wavy and keep their endpoints, plan lines are straight, and no cardinality overlaps another cardinality or any other line;
+- the deontic renderings: `norms_of`, the three styles with and without inherited norms, the deferred `ds_links` edges and their routing to the right table rows, and rendering through the command line;
 - the command line;
 - real SVG and PDF rendering of both examples, which is skipped when Graphviz is not installed.
 
